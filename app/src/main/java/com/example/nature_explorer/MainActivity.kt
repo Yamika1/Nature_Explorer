@@ -1,5 +1,7 @@
 package com.example.nature_explorer
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
@@ -10,29 +12,27 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import com.google.android.material.navigation.NavigationView
 
-class MainActivity : AppCompatActivity(), View.OnClickListener,
+class MainActivity : AppCompatActivity(),
+    View.OnClickListener,
     NavigationView.OnNavigationItemSelectedListener {
 
-    private lateinit var binding: ActivityMainWithNavDrawerBinding
-    private lateinit var toggle: ActionBarDrawerToggle
+    var nature = Nature()
+    private lateinit var binding: ActivityMainWithNavBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-
-        binding = ActivityMainWithNavDrawerBinding.inflate(layoutInflater)
+        binding = ActivityMainWithNavBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         binding.nature.setOnClickListener(this)
 
         setSupportActionBar(binding.navToolbar)
-
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
 
-
-        toggle = ActionBarDrawerToggle(
+        val toggleOnOff = ActionBarDrawerToggle(
             this,
             binding.drawerLayout,
             binding.navToolbar,
@@ -40,47 +40,109 @@ class MainActivity : AppCompatActivity(), View.OnClickListener,
             R.string.navigation_drawer_close
         )
 
-        binding.drawerLayout.addDrawerListener(toggle)
-        toggle.syncState()
+        binding.drawerLayout.addDrawerListener(toggleOnOff)
+        toggleOnOff.syncState()
 
         binding.navView.bringToFront()
         binding.navView.setNavigationItemSelectedListener(this)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return if (toggle.onOptionsItemSelected(item)) {
-            true
-        } else {
-            super.onOptionsItemSelected(item)
+    override fun onClick(v: View?) {
+        when (v?.id) {
+            R.id.nature -> {
+                nature.reserveName =
+                    "The name of the nature reserve is Cumberland Nature Reserve"
+
+                openIntent(
+                    applicationContext,
+                    nature.reserveName,
+                    NatureDetailsActivity::class.java
+                )
+            }
         }
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.nav_home -> { }
-            R.id.nav_gallery -> { }
-            R.id.nav_favourites -> { }
-            R.id.nav_settings -> { }
+            R.id.nav_main -> {
+                Toast.makeText(this, "Menu is clicked", Toast.LENGTH_SHORT).show()
+            }
+
+            R.id.nature -> {
+                openIntent(applicationContext, "", NatureDetailsActivity::class.java)
+                Toast.makeText(this, "This is a Cherry Blossom", Toast.LENGTH_SHORT).show()
+            }
         }
-        binding.drawerLayout.closeDrawers()
+        binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
 
-    override fun onClick(v: View?) {
-        when (v?.id) {
-            R.id.nature -> Toast.makeText(
-                this,
-                "This is nature",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
+    /*@SuppressLint("GestureBackNavigation")
     override fun onBackPressed() {
-        if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+        if(binding.drawerLayout.isDrawerOpen(GravityCompat.START)){
             binding.drawerLayout.closeDrawer(GravityCompat.START)
         } else {
             super.onBackPressed()
         }
+    }*/
+}
+class Nature() {
+    lateinit var reserveName: String
+    lateinit var reservePlace: String
+
+
+    constructor(name: String, place: String) : this() {
+        reserveName = name
+        reservePlace = place
     }
+}
+
+
+fun openIntent(context: Context, nature: String, activityToOpen: Class<*>){
+    val intent = Intent(context, activityToOpen)
+
+    intent.putExtra("nature", nature)
+
+    if(context !is android.app.Activity){
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
+    context.startActivity(intent)
+}
+
+fun shareIntent(context: Context, order: String){
+    val sendIntent = Intent()
+
+    sendIntent.action = Intent.ACTION_SEND
+
+    sendIntent.putExtra(Intent.EXTRA_TEXT, order)
+
+    sendIntent.type = "text/plain"
+
+    val shareIntent = Intent.createChooser(sendIntent, null)
+
+    if(context !is android.app.Activity){
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(shareIntent)
+}
+
+
+fun shareIntent(context: Context, nature: Nature){
+    val sendIntent = Intent()
+
+    val shareDetails = Bundle()
+    shareDetails.putString("reserveName", nature.reserveName)
+    shareDetails.putString("reservePlace", nature.reservePlace)
+
+
+    sendIntent.putExtra(Intent.EXTRA_TEXT, shareDetails)
+    sendIntent.type = "text/plain"
+
+    val shareIntent = Intent.createChooser(sendIntent, null)
+
+    if(context !is android.app.Activity){
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(shareIntent)
 }
